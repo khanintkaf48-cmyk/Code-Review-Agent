@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+
 from reviewer.agent import ReviewAgent, extract_json
 from reviewer.config import Config
 from reviewer.memory import Memory
