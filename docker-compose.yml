@@ -1,0 +1,9 @@
+services:
+  reviewer:
+    build: .
+    ports: ["8080:8080"]
+    env_file: .env
+    volumes: ["reviewer-data:/data"]
+    restart: unless-stopped
+volumes:
+  reviewer-data:

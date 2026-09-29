@@ -1,0 +1,19 @@
+[project]
+name = "code-review-agent"
+version = "0.2.0"
+description = "A code review agent that learns your team's standards and remembers past review feedback."
+requires-python = ">=3.10"
+dependencies = ["anthropic>=0.40.0", "requests>=2.31.0"]
+
+[project.scripts]
+reviewer = "reviewer.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+reviewer = ["web/*.html"]

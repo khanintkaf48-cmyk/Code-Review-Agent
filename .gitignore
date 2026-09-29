@@ -1,0 +1,6 @@
+.reviewer/memory.db
+__pycache__/
+*.egg-info/
+.venv/
+.env
+.reviewer/demo/

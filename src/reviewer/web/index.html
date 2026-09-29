@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reviewer · what your team taught it</title>
+<style>
+  :root {
+    --canvas: #EEF1F6;
+    --paper: #FFFFFF;
+    --ink: #132033;
+    --muted: #55657C;
+    --line: #D3DBE7;
+    --cobalt: #2B4BF2;
+    --cobalt-ink: #1B32B5;
+    --accept: #0E7C66;
+    --accept-bg: #DDF3EC;
+    --reject: #B4294A;
+    --reject-bg: #FBE3E9;
+    --amber: #8F5A0B;
+    --amber-bg: #FBEFD5;
+    --serif: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, Palatino, Georgia, serif;
+    --sans: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font: 15px/1.5 var(--sans); }
+  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; border-radius: 3px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  header { background: var(--paper); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding-top: 14px; padding-bottom: 0; }
+  .brand { font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; padding-bottom: 12px; }
+  nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+  nav button { background: none; border: 0; padding: 10px 14px 12px; cursor: pointer; color: var(--muted);
+               border-bottom: 3px solid transparent; font-weight: 600; }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--cobalt); }
+  nav button:hover { color: var(--ink); }
+  .meta { color: var(--muted); font-size: 13px; padding-bottom: 12px; display: flex; gap: 10px; align-items: center; }
+  .pill { border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; background: var(--canvas); font-family: var(--mono); font-size: 12px; }
+
+  nav button { white-space: nowrap; }
+  .meta { margin-left: auto; }
+  @media (max-width: 760px) {
+    header .wrap { gap: 0 12px; }
+    .brand, .meta { padding-bottom: 8px; }
+    nav { order: 3; flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto; margin: 0 -8px; }
+  }
+  main.wrap { padding-top: 36px; padding-bottom: 80px; }
+  section[hidden] { display: none; }
+  h1 { font: 400 clamp(28px, 4.2vw, 44px)/1.15 var(--serif); letter-spacing: -0.015em; max-width: 24em; margin: 0 0 28px; }
+  h2 { font: 700 19px/1.3 var(--serif); margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: -16px 0 24px; max-width: 60ch; }
+
+  .ledger { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; margin-bottom: 28px; }
+  .bar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--canvas); margin: 10px 0 12px; }
+  .bar i { display: block; height: 100%; }
+  .bar .a { background: var(--accept); } .bar .r { background: var(--reject); } .bar .o { background: #B8C3D4; }
+  .legend { display: flex; gap: 22px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+  .legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .panel { border-top: 2px solid var(--ink); padding-top: 12px; }
+  .mistake { display: grid; grid-template-columns: minmax(0, 1fr) 120px 28px; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .mistake code { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  .meter { height: 8px; background: var(--canvas); border-radius: 2px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--cobalt); }
+  .num { font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+  .turned { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .turned .why { color: var(--muted); font-size: 14px; }
+  .empty { color: var(--muted); padding: 14px 0; }
+
+  .toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .seg { border: 1px solid var(--line); background: var(--paper); padding: 6px 14px; cursor: pointer; border-radius: 4px; font-weight: 600; color: var(--muted); }
+  .seg[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .row { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 14px; padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); border-left-width: 4px; margin-bottom: 8px; border-radius: 3px; }
+  .row.accepted { border-left-color: var(--accept); } .row.rejected { border-left-color: var(--reject); } .row.open { border-left-color: #B8C3D4; }
+  @media (max-width: 760px) { .row { grid-template-columns: 1fr; gap: 8px; } }
+  .rid { font-family: var(--mono); color: var(--muted); font-size: 13px; }
+  .loc { font-family: var(--mono); font-size: 13px; color: var(--cobalt-ink); overflow-wrap: anywhere; }
+  .msg { margin: 4px 0 0; }
+  .again { margin: 6px 0 0; color: var(--amber); background: var(--amber-bg); display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 13px; font-weight: 600; }
+  .fix { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .fix code { font-family: var(--mono); font-size: 13px; background: var(--canvas); padding: 1px 5px; border-radius: 3px; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 3px; margin-right: 8px; }
+  .sev-blocker { background: var(--reject); color: #fff; }
+  .sev-major { background: var(--reject-bg); color: var(--reject); }
+  .sev-minor { background: var(--amber-bg); color: var(--amber); }
+  .sev-nit { background: var(--canvas); color: var(--muted); border: 1px solid var(--line); }
+  .verdict { font-size: 13px; font-weight: 700; }
+  .verdict.accepted { color: var(--accept); } .verdict.rejected { color: var(--reject); }
+  .reason { color: var(--muted); font-size: 13px; font-weight: 400; }
+  .acts { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 5px 12px; cursor: pointer; font-weight: 600; }
+  .btn:hover { border-color: var(--ink); }
+  .btn.ok { color: var(--accept); } .btn.no { color: var(--reject); }
+  .btn.primary { background: var(--cobalt); border-color: var(--cobalt); color: #fff; padding: 9px 18px; }
+  .btn.primary:hover { background: var(--cobalt-ink); }
+  .btn:disabled { opacity: .55; cursor: progress; }
+  .why-form { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .why-form input { flex: 1; min-width: 200px; }
+
+  input[type=text], select, textarea { border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 8px 10px; }
+  textarea { width: 100%; min-height: 240px; font-family: var(--mono); font-size: 13px; line-height: 1.45; }
+  .form { display: grid; grid-template-columns: 1fr 160px 130px auto; gap: 8px; margin-bottom: 20px; }
+  @media (max-width: 760px) { .form { grid-template-columns: 1fr 1fr; } .form input[type=text]:first-child { grid-column: 1 / -1; } }
+  .rule { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .rule .tags { color: var(--muted); font-size: 13px; font-family: var(--mono); }
+  .rule .del { background: none; border: 0; color: var(--reject); cursor: pointer; font-weight: 600; }
+
+  .summary { background: var(--paper); border: 1px solid var(--line); padding: 14px 16px; border-radius: 4px; margin: 16px 0; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 4px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; }
+  #toast.show { opacity: 1; }
+  #toast.err { background: var(--reject); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">Reviewer</div>
+    <nav role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="findings" aria-selected="false">Findings</button>
+      <button role="tab" data-tab="rules" aria-selected="false">Team rules</button>
+      <button role="tab" data-tab="try" aria-selected="false">Review a diff</button>
+    </nav>
+    <div class="meta"><button class="btn" id="resetDemo" hidden>Reset demo</button>model <span class="pill" id="model">…</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="tab-overview">
+    <h1 id="hero">Loading what the agent has learned…</h1>
+    <div class="ledger">
+      <h2>How the team has judged its suggestions</h2>
+      <div class="bar" id="bar" role="img" aria-label="Verdict split"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="cols">
+      <div class="panel"><h2>Mistakes your team really makes</h2><div id="mistakes"></div></div>
+      <div class="panel"><h2>Suggestions your team turned down</h2><div id="pushback"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-findings" hidden>
+    <h1>Every suggestion, and what the team decided</h1>
+    <div class="toolbar" id="filters"></div>
+    <div id="findings"></div>
+  </section>
+
+  <section id="tab-rules" hidden>
+    <h1>The rules the agent reads before every review</h1>
+    <p class="sub">Rules come from you, from past review comments, and from reasons given when rejecting a suggestion.</p>
+    <form class="form" id="ruleForm">
+      <input type="text" id="ruleText" placeholder="e.g. Handlers must not import repositories" aria-label="Rule" required>
+      <select id="ruleCat" aria-label="Category">
+        <option>convention</option><option>architecture</option><option>security</option>
+        <option>testing</option><option>error-handling</option><option>performance</option>
+      </select>
+      <input type="text" id="ruleLang" placeholder="language (or *)" aria-label="Language" value="*">
+      <button class="btn primary" type="submit">Add rule</button>
+    </form>
+    <div id="rules"></div>
+  </section>
+
+  <section id="tab-try" hidden>
+    <h1>Paste a diff and get a review that knows your team</h1>
+    <textarea id="diff" spellcheck="false" aria-label="Unified diff" placeholder="Paste the output of `git diff` here (plain code works too)"></textarea>
+    <div class="toolbar" style="margin-top:10px">
+      <button class="btn primary" id="runReview">Review this diff</button>
+      <button class="btn" id="loadSample">Load a sample diff</button>
+    </div>
+    <div id="reviewOut"></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return el;
+}
+function toast(msg, err = false) {
+  const t = $("#toast"); t.textContent = msg; t.className = "show" + (err ? " err" : "");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = "", 3200);
+}
+
+let currentTab = "overview";
+let token = sessionStorage.getItem("reviewer-token") || "";
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { "Content-Type": "application/json",
+    ...(token ? { Authorization: "Bearer " + token } : {}) } });
+  if (res.status === 401) {
+    token = window.prompt("This dashboard is protected. Enter the access token:") || "";
+    sessionStorage.setItem("reviewer-token", token);
+    if (token) return api(path, opts);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+const post = (p, body) => api(p, { method: "POST", body: JSON.stringify(body) });
+const guard = fn => async (...a) => { try { await fn(...a); } catch (e) { toast(e.message, true); } };
+
+/* ---------- tabs ---------- */
+const tabs = { overview: loadOverview, findings: loadFindings, rules: loadRules, try: () => {} };
+function show(name) {
+  currentTab = name;
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  for (const key of Object.keys(tabs)) $("#tab-" + key).hidden = key !== name;
+  guard(tabs[name])();
+  history.replaceState(null, "", "#" + name);
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.tab)));
+
+/* ---------- overview ---------- */
+function applyMeta(s) {
+  $("#model").textContent = s.model;
+  $("#resetDemo").hidden = !s.demo;
+}
+$("#resetDemo").addEventListener("click", guard(async () => {
+  await post("/api/reset", {});
+  toast("Demo data reset. Fresh start.");
+  $("#reviewOut").replaceChildren();
+  show(currentTab);
+}));
+async function loadOverview() {
+  const s = await api("/api/stats");
+  applyMeta(s);
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  $("#hero").textContent = s.findings === 0 && s.rules === 0
+    ? "The agent hasn't learned anything yet. Add a rule or review a diff to start."
+    : `The agent knows ${plural(s.rules, "team rule")} and has learned from ${plural(s.rejected, "suggestion")} your team turned down.`;
+  const total = Math.max(s.findings, 1);
+  const bar = $("#bar"); bar.replaceChildren(
+    h("i", { class: "a", style: `width:${s.accepted / total * 100}%` }),
+    h("i", { class: "r", style: `width:${s.rejected / total * 100}%` }),
+    h("i", { class: "o", style: `width:${s.open / total * 100}%` }));
+  const rate = s.acceptance_rate == null ? "no verdicts yet" : Math.round(s.acceptance_rate * 100) + "% of judged suggestions were useful";
+  $("#legend").replaceChildren(
+    h("span", {}, h("span", { class: "dot", style: "background:var(--accept)" }), h("b", {}, s.accepted), " accepted"),
+    h("span", {}, h("span", { class: "dot", style: "background:var(--reject)" }), h("b", {}, s.rejected), " rejected"),
+    h("span", {}, h("span", { class: "dot", style: "background:#B8C3D4" }), h("b", {}, s.open), " waiting for a verdict"),
+    h("span", {}, rate));
+  const top = s.top_mistakes, max = Math.max(...top.map(m => m.accepted), 1);
+  $("#mistakes").replaceChildren(...(top.length ? top.map(m =>
+    h("div", { class: "mistake" }, h("code", {}, m.pattern_key),
+      h("div", { class: "meter" }, h("i", { style: `width:${m.accepted / max * 100}%` })),
+      h("span", { class: "num" }, m.accepted + "×"))) :
+    [h("p", { class: "empty" }, "Accept a few findings and the issues your team really cares about show up here.")]));
+  $("#pushback").replaceChildren(...(s.pushback.length ? s.pushback.map(p =>
+    h("div", { class: "turned" }, h("code", { style: "font-family:var(--mono);font-size:13px" }, p.pattern_key),
+      h("div", { class: "why" }, p.reason ? "“" + p.reason + "”" : "No reason given"))) :
+    [h("p", { class: "empty" }, "Nothing rejected yet. When you reject a suggestion, the agent stops raising it.")]));
+}
+
+/* ---------- findings ---------- */
+let filter = "open";
+function findingRow(f, onDone) {
+  const acts = h("div", { class: "acts" });
+  const verdict = f.status === "open" ? null : h("div", { class: "verdict " + f.status }, f.status === "accepted" ? "Accepted" : f.status === "rejected" ? "Rejected" : "Ignored",
+    f.reason ? h("div", { class: "reason" }, "“" + f.reason + "”") : null);
+  const send = guard(async (status, reason) => {
+    await post("/api/feedback", { id: f.id, status, reason });
+    toast(status === "accepted" ? "Accepted. The agent will keep watching for this." : "Rejected. The agent won't raise this again.");
+    onDone(status, reason);
+  });
+  const rejectBtn = h("button", { class: "btn no", onclick: () => {
+    if ($(".why-form", body)) return;
+    const input = h("input", { type: "text", placeholder: "Why? (optional, saved as a team rule)", "aria-label": "Reason" });
+    const form = h("form", { class: "why-form", onsubmit: e => { e.preventDefault(); send("rejected", input.value.trim() || null); } },
+      input, h("button", { class: "btn no", type: "submit" }, "Reject suggestion"));
+    body.append(form); input.focus();
+  } }, "Reject");
+  if (f.status === "open") acts.append(h("button", { class: "btn ok", onclick: () => send("accepted", null) }, "Accept"), rejectBtn);
+  const loc = f.file ? (f.line ? `${f.file}:${f.line}` : f.file) : "";
+  const body = h("div", {},
+    h("div", {}, h("span", { class: "chip sev-" + f.severity }, f.severity), h("span", { class: "loc" }, loc)),
+    h("p", { class: "msg" }, f.message),
+    f.previously_rejected ? h("p", { class: "again" }, "Rejected before, shown again because it is a blocker.") : null,
+    f.suggestion ? h("p", { class: "fix" }, "Fix: ", h("code", {}, f.suggestion)) : null);
+  return h("div", { class: "row " + f.status }, h("div", { class: "rid" }, "#" + f.id), body, verdict || acts);
+}
+async function loadFindings() {
+  const box = $("#filters"); box.replaceChildren();
+  for (const [key, label] of [["open", "Waiting"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["all", "All"]])
+    box.append(h("button", { class: "seg", "aria-pressed": filter === key, onclick: () => { filter = key; loadFindings(); } }, label));
+  const list = await api("/api/findings" + (filter === "all" ? "" : "?status=" + filter));
+  $("#findings").replaceChildren(...(list.length ? list.map(f => findingRow(f, () => loadFindings())) :
+    [h("p", { class: "empty" }, filter === "open" ? "Nothing is waiting for a verdict. Review a diff to get new findings." : "No findings here yet.")]));
+}
+
+/* ---------- rules ---------- */
+async function loadRules() {
+  const rules = await api("/api/rules");
+  $("#rules").replaceChildren(...(rules.length ? rules.map(r =>
+    h("div", { class: "rule" }, h("span", { class: "rid" }, "#" + r.id), h("span", {}, r.text),
+      h("span", { class: "tags" }, `${r.category} · ${r.language} · ${r.source}`),
+      h("button", { class: "del", onclick: guard(async () => { await api("/api/rules/" + r.id, { method: "DELETE" }); toast("Rule deleted."); loadRules(); }) }, "Delete"))) :
+    [h("p", { class: "empty" }, "No rules yet. Add the first one above.")]));
+}
+$("#ruleForm").addEventListener("submit", guard(async e => {
+  e.preventDefault();
+  const text = $("#ruleText").value.trim(); if (!text) return;
+  const r = await post("/api/rules", { text, category: $("#ruleCat").value, language: $("#ruleLang").value.trim() || "*" });
+  toast(r.added ? "Rule added." : "The agent already knew this rule. Reinforced it.");
+  $("#ruleText").value = ""; loadRules();
+}));
+
+/* ---------- try a review ---------- */
+function liveRow(f) {  // a finding row that re-renders itself after a verdict
+  const row = findingRow(f, (status, reason) => row.replaceWith(liveRow({ ...f, status, reason })));
+  return row;
+}
+$("#loadSample").addEventListener("click", guard(async () => { $("#diff").value = (await api("/api/sample")).diff; }));
+$("#runReview").addEventListener("click", guard(async () => {
+  const diff = $("#diff").value; if (!diff.trim()) return toast("Paste a diff first.", true);
+  const btn = $("#runReview"); btn.disabled = true; btn.textContent = "Reviewing…";
+  try {
+    const r = await post("/api/review", { diff });
+    const out = $("#reviewOut"); out.replaceChildren(...[
+      h("div", { class: "summary" }, r.summary || "No summary."),
+      ...(r.findings.length ? r.findings.map(f => liveRow({ ...f, status: "open" }))
+        : [h("p", { class: "empty" }, "No new findings.")]),
+      r.suppressed.length ? h("p", { class: "empty" }, `${r.suppressed.length} suggestion(s) hidden because your team rejected them before: ` + r.suppressed.map(s => s.pattern_key).join(", ")) : null].filter(Boolean));
+  } finally { btn.disabled = false; btn.textContent = "Review this diff"; }
+}));
+
+guard(async () => applyMeta(await api("/api/stats")))();
+show(tabs[location.hash.slice(1)] ? location.hash.slice(1) : "overview");
+</script>
+</body>
+</html>
